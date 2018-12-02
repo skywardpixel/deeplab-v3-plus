@@ -108,9 +108,9 @@ def get_pascal_labels():
 
 def dataset_root_dir(dataset):
     if dataset == 'pascal':
-        return os.path.join(DATASET_ROOT, '/VOC2012/')
+        return os.path.join(DATASET_ROOT, 'VOC2012')
     elif dataset == 'sbd':
-        return os.path.join(DATASET_ROOT, '/benchmark_RELEASE/')
+        return os.path.join(DATASET_ROOT, 'benchmark_RELEASE')
     # elif dataset == 'cityscapes':
     #     return os.path.join(DATASET_ROOT, '/cityscapes/')
     # elif dataset == 'coco':
