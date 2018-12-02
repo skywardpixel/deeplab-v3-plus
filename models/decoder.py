@@ -11,8 +11,8 @@ class Decoder(nn.Module):
         else:
             raise ValueError
 
-        self.conv1 = nn.Conv2d(low_level_in_planes, 48, kernel_size=1, bias=False)
-        self.bn1 = nn.BatchNorm2d(48)
+        self.conv = nn.Conv2d(low_level_in_planes, 48, kernel_size=1, bias=False)
+        self.bn = nn.BatchNorm2d(48)
         self.last_conv = nn.Sequential(nn.Conv2d(304, 256, kernel_size=3, stride=1, padding=1, bias=False),
                                        nn.BatchNorm2d(256),
                                        nn.ReLU(),
@@ -25,9 +25,9 @@ class Decoder(nn.Module):
         self._init_weight()
 
     def forward(self, x, low_level_feat):
-        low_level_feat = self.conv1(low_level_feat)
-        low_level_feat = self.bn1(low_level_feat)
-        low_level_feat = self.relu(low_level_feat)
+        low_level_feat = self.conv(low_level_feat)
+        low_level_feat = self.bn(low_level_feat)
+        low_level_feat = F.relu(low_level_feat)
 
         x = F.interpolate(x, size=low_level_feat.size()[2:], mode='bilinear', align_corners=True)
         x = torch.cat((x, low_level_feat), dim=1)
