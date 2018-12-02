@@ -10,7 +10,8 @@ class ASPPModule(nn.Module):
                                      planes,
                                      kernel_size=kernel_size,
                                      padding=padding,
-                                     dilation=dilation)
+                                     dilation=dilation,
+                                     bias=False)
         self.bn = nn.BatchNorm2d(planes)
         self.relu = nn.ReLU()
         self._init_weight()
@@ -33,7 +34,7 @@ class ASPP(nn.Module):
     def __init__(self, backbone, output_stride):
         super(ASPP, self).__init__()
         if backbone == 'resnet':
-            in_planes = 2048
+            inplanes = 2048
         else:
             raise NotImplementedError
         if output_stride == 16:
@@ -43,13 +44,13 @@ class ASPP(nn.Module):
         else:
             raise NotImplementedError
 
-        self.aspp1 = ASPPModule(in_planes, 256, kernel_size=1, padding=0, dilation=dilations[0])
-        self.aspp2 = ASPPModule(in_planes, 256, kernel_size=3, padding=0, dilation=dilations[1])
-        self.aspp3 = ASPPModule(in_planes, 256, kernel_size=3, padding=0, dilation=dilations[2])
-        self.aspp4 = ASPPModule(in_planes, 256, kernel_size=3, padding=0, dilation=dilations[3])
+        self.aspp1 = ASPPModule(inplanes, 256, kernel_size=1, padding=0, dilation=dilations[0])
+        self.aspp2 = ASPPModule(inplanes, 256, kernel_size=3, padding=dilations[1], dilation=dilations[1])
+        self.aspp3 = ASPPModule(inplanes, 256, kernel_size=3, padding=dilations[2], dilation=dilations[2])
+        self.aspp4 = ASPPModule(inplanes, 256, kernel_size=3, padding=dilations[3], dilation=dilations[3])
 
         self.global_avg_pool = nn.Sequential(nn.AdaptiveAvgPool2d((1, 1)),
-                                             nn.Conv2d(in_planes, 256, 1, stride=1, bias=False),
+                                             nn.Conv2d(inplanes, 256, 1, stride=1, bias=False),
                                              nn.BatchNorm2d(256),
                                              nn.ReLU())
 
