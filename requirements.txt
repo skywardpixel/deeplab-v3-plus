@@ -1,1 +1,8 @@
+scipy
+pillow
+matplotlib
+torchvision
+tensorboardX
+tqdm
+numpy
 torch
