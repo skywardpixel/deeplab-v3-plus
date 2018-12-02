@@ -12,7 +12,7 @@ class DeepLab(nn.Module):
         super(DeepLab, self).__init__()
         self.backbone = build_backbone(backbone, output_stride)
         self.aspp = build_aspp(backbone, output_stride)
-        self.decoder = build_decoder(backbone, output_stride)
+        self.decoder = build_decoder(num_classes, backbone)
         if freeze_bn:
             self.freeze_bn()
 
