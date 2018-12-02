@@ -1,6 +1,10 @@
+import os
+
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
+
+from settings import DATASET_ROOT
 
 
 def decode_seg_map_sequence(label_masks, dataset='pascal'):
@@ -100,3 +104,17 @@ def get_pascal_labels():
                        [64, 0, 128], [192, 0, 128], [64, 128, 128], [192, 128, 128],
                        [0, 64, 0], [128, 64, 0], [0, 192, 0], [128, 192, 0],
                        [0, 64, 128]])
+
+
+def dataset_root_dir(dataset):
+    if dataset == 'pascal':
+        return os.path.join(DATASET_ROOT, '/VOC2012/')
+    elif dataset == 'sbd':
+        return os.path.join(DATASET_ROOT, '/benchmark_RELEASE/')
+    # elif dataset == 'cityscapes':
+    #     return os.path.join(DATASET_ROOT, '/cityscapes/')
+    # elif dataset == 'coco':
+    #     return os.path.join(DATASET_ROOT, '/coco/')
+    else:
+        print('Dataset {} not available.'.format(dataset))
+        raise ValueError

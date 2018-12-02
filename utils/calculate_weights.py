@@ -3,7 +3,7 @@ import os
 import numpy as np
 from tqdm import tqdm
 
-from dataloaders import dataset_root_dir
+from dataloaders.utils import dataset_root_dir
 
 
 def calculate_weight_labels(dataset, dataloader, num_classes):

@@ -8,8 +8,8 @@ import torch.utils.data as data
 from PIL import Image
 from torchvision import transforms
 
-from dataloaders import dataset_root_dir
 from dataloaders import transforms as tr
+from dataloaders.utils import dataset_root_dir
 
 
 class SBDSegmentation(data.Dataset):
@@ -85,7 +85,7 @@ class SBDSegmentation(data.Dataset):
 
 
 if __name__ == '__main__':
-    from dataloaders.utils import decode_segmap
+    from dataloaders.utils import decode_segmap, dataset_root_dir, dataset_root_dir
     from torch.utils.data import DataLoader
     import matplotlib.pyplot as plt
     import argparse

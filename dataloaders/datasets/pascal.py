@@ -7,8 +7,8 @@ from PIL import Image
 from torch.utils.data import Dataset
 from torchvision import transforms
 
-from dataloaders import dataset_root_dir
 from dataloaders import transforms as tr
+from dataloaders.utils import dataset_root_dir
 
 
 class VOCSegmentation(Dataset):
@@ -22,7 +22,7 @@ class VOCSegmentation(Dataset):
         :param base_dir: path to VOC dataset directory
         :param split: train/val
         """
-        super().__init__()
+        super(VOCSegmentation, self).__init__()
         self._base_dir = base_dir
         self._image_dir = os.path.join(self._base_dir, 'JPEGImages')
         self._cat_dir = os.path.join(self._base_dir, 'SegmentationClass')
@@ -102,7 +102,7 @@ class VOCSegmentation(Dataset):
 
 
 if __name__ == '__main__':
-    from dataloaders.utils import decode_segmap
+    from dataloaders.utils import decode_segmap, dataset_root_dir, dataset_root_dir
     from torch.utils.data import DataLoader
     import matplotlib.pyplot as plt
     import argparse

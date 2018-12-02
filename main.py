@@ -4,7 +4,8 @@ import os
 import numpy as np
 from tqdm import tqdm
 
-from dataloaders import make_data_loader, dataset_root_dir
+from dataloaders import make_data_loader
+from dataloaders.utils import dataset_root_dir
 from evaluator import Evaluator
 from losses import SegmentationLosses
 from models.deeplab import *

@@ -1,9 +1,6 @@
-import os
-
 from torch.utils.data import DataLoader
 
 from dataloaders.datasets import combine, pascal, sbd
-from settings import DATASET_ROOT
 
 
 def make_data_loader(args, **kwargs):
@@ -42,18 +39,4 @@ def make_data_loader(args, **kwargs):
     #     return train_loader, val_loader, test_loader, num_class
 
     else:
-        raise ValueError
-
-
-def dataset_root_dir(dataset):
-    if dataset == 'pascal':
-        return os.path.join(DATASET_ROOT, '/VOC2012/')
-    elif dataset == 'sbd':
-        return os.path.join(DATASET_ROOT, '/benchmark_RELEASE/')
-    # elif dataset == 'cityscapes':
-    #     return os.path.join(DATASET_ROOT, '/cityscapes/')
-    # elif dataset == 'coco':
-    #     return os.path.join(DATASET_ROOT, '/coco/')
-    else:
-        print('Dataset {} not available.'.format(dataset))
         raise ValueError
