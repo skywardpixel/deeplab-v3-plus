@@ -23,9 +23,13 @@ class TensorboardSummary(object):
 
 
         # make sure this is clamped .clamp(0,1)
-        grid_image = make_grid(output[:3].detach().cpu(), 3, normalize=False, range=(0, 255))
-        
-        writer.add_image('Predicted label', grid_image, global_step)
+        grid_image = make_grid(output[:3,0:1].detach().cpu(), 3, normalize=False, range=(0, 255))
+
+        writer.add_image('Is human', grid_image, global_step)
+
+        grid_image = make_grid(output[:3,1:4].detach().cpu(), 3, normalize=False, range=(0, 255))
+        writer.add_image('Feature Vector 1-3', grid_image, global_step)
+
         grid_image = make_grid(decode_seg_map_sequence(torch.squeeze(target[:3], 1).detach().cpu().numpy(),
                                                        dataset=dataset), 3, normalize=False, range=(0, 255))
         writer.add_image('Groundtruth label', grid_image, global_step)

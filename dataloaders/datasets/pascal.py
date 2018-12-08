@@ -67,7 +67,7 @@ class VOCSegmentation(Dataset):
                             if _cat[x,y] == self.HUMAN_CLASS_ID and obj!=255 and obj!=0:
                                 if obj not in humans:
                                     humans[obj] = len(humans)+1
-                                _obj[x,y] = 1 #humans[obj]
+                                _obj[x,y] = humans[obj]
                     
                     if len(humans) >1:
                         if os.path.isfile(os.path.join(self._human_dir, line + ".png")):

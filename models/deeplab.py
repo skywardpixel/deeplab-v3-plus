@@ -6,11 +6,17 @@ from models import build_backbone
 from models.aspp import build_aspp
 from models.decoder import build_decoder
 
+#DO NOT SET TO EXACTLY 20
+FEATUREVECTORSIZE = 32
+
 def compute_loss(output, target):
-
+    is_human = target.clamp(0,1)
     criterion = nn.MSELoss()
+    loss = criterion(output[:,0], is_human)
 
-    return criterion(output[:,0], target)
+    #add fv loss
+
+    return loss
 
 class DeepLab(nn.Module):
     def __init__(self, backbone='resnet', output_stride=16, num_classes=21, freeze_bn=False):
@@ -30,9 +36,7 @@ class DeepLab(nn.Module):
             return
 
         # p(human)
-        new_final_conv = nn.Conv2d(256, 1, kernel_size=1, stride=1)
-
-
+        new_final_conv = nn.Conv2d(256, 1 + FEATUREVECTORSIZE, kernel_size=1, stride=1)
         
         self.decoder.last_conv[8] = new_final_conv
 
