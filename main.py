@@ -88,7 +88,7 @@ class Trainer(object):
         self.model.convert_to_project()
 
         #moved it here cause of cuda junk
-        self.criterion = SegmentationLosses(weight=weight, cuda=args.cuda).build_loss(mode=args.loss_type)
+        #self.criterion = SegmentationLosses(weight=weight, cuda=args.cuda).build_loss(mode=args.loss_type)
 
         # Using cuda
         if args.cuda:
@@ -111,7 +111,8 @@ class Trainer(object):
             self.scheduler(self.optimizer, i, epoch, self.best_pred)
             self.optimizer.zero_grad()
             output = self.model(image)
-            loss = self.criterion(output, target)
+            #loss = self.criterion(output, target)
+            loss = compute_loss(output, target)
             loss.backward()
             self.optimizer.step()
             train_loss += loss.item()
@@ -148,7 +149,8 @@ class Trainer(object):
                 image, target = image.cuda(), target.cuda()
             with torch.no_grad():
                 output = self.model(image)
-            loss = self.criterion(output, target)
+            #loss = self.criterion(output, target)
+            loss = compute_loss(output, target)
             test_loss += loss.item()
             pred = output.data.cpu().numpy()
             target = target.cpu().numpy()
@@ -172,15 +174,18 @@ class Trainer(object):
         print('Loss: %.3f' % test_loss)
 
         new_pred = mean_iou
+        is_best = False
         if new_pred > self.best_pred:
             is_best = True
             self.best_pred = new_pred
-            self.saver.save_checkpoint({
-                'epoch': epoch + 1,
-                'state_dict': self.model.module.state_dict(),
-                'optimizer': self.optimizer.state_dict(),
-                'best_pred': self.best_pred,
-            }, is_best)
+
+        #i untabbed this to always save
+        self.saver.save_checkpoint({
+            'epoch': epoch + 1,
+            'state_dict': self.model.module.state_dict(),
+            'optimizer': self.optimizer.state_dict(),
+            'best_pred': self.best_pred,
+        }, is_best)
 
 
 def main():

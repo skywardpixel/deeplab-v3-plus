@@ -6,6 +6,11 @@ from models import build_backbone
 from models.aspp import build_aspp
 from models.decoder import build_decoder
 
+def compute_loss(output, target):
+
+    criterion = nn.MSELoss()
+
+    return criterion(output[:,0], target)
 
 class DeepLab(nn.Module):
     def __init__(self, backbone='resnet', output_stride=16, num_classes=21, freeze_bn=False):
@@ -24,11 +29,10 @@ class DeepLab(nn.Module):
         if self.is_project():
             return
 
-        new_final_conv = nn.Conv2d(256, 2, kernel_size=1, stride=1)
+        # p(human)
+        new_final_conv = nn.Conv2d(256, 1, kernel_size=1, stride=1)
 
-        #don't copy the last layer because it messes up CUDA
-        #new_final_conv.weight[0] = self.decoder.last_conv[8].weight[0] #copy background
-        #new_final_conv.weight[1] = self.decoder.last_conv[8].weight[15].cpu() #copy humans
+
         
         self.decoder.last_conv[8] = new_final_conv
 
@@ -38,7 +42,8 @@ class DeepLab(nn.Module):
         x = self.aspp(x)
         x = self.decoder(x, low_level_feat)
         x = F.interpolate(x, size=input.size()[2:], mode='bilinear', align_corners=True)
-
+        if self.is_project():
+            x[:,0] = F.sigmoid(x[:,0])
         return x
 
     def freeze_bn(self):
