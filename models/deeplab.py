@@ -16,6 +16,22 @@ class DeepLab(nn.Module):
         if freeze_bn:
             self.freeze_bn()
 
+    def is_project(self):
+        return self.decoder.last_conv[8].out_channels!=21
+
+    def convert_to_project(self):
+        #DO NOT USE 21 CHANNEL OUTPUT FOR PROJECT
+        if self.is_project():
+            return
+
+        new_final_conv = nn.Conv2d(256, 2, kernel_size=1, stride=1)
+
+        #don't copy the last layer because it messes up CUDA
+        #new_final_conv.weight[0] = self.decoder.last_conv[8].weight[0] #copy background
+        #new_final_conv.weight[1] = self.decoder.last_conv[8].weight[15].cpu() #copy humans
+        
+        self.decoder.last_conv[8] = new_final_conv
+
     def forward(self, x):
         input = x
         x, low_level_feat = self.backbone(x)

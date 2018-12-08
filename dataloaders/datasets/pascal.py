@@ -17,6 +17,8 @@ class VOCSegmentation(Dataset):
     """
     NUM_CLASSES = 21
 
+    HUMAN_CLASS_ID = 15
+
     def __init__(self, args, base_dir=dataset_root_dir('pascal'), split='train'):
         """
         :param base_dir: path to VOC dataset directory
@@ -26,6 +28,11 @@ class VOCSegmentation(Dataset):
         self._base_dir = base_dir
         self._image_dir = os.path.join(self._base_dir, 'JPEGImages')
         self._cat_dir = os.path.join(self._base_dir, 'SegmentationClass')
+        self._obj_dir = os.path.join(self._base_dir, 'SegmentationObject')
+        self._human_dir = os.path.join(self._base_dir, 'SegmentationHumans')
+
+        if not os.path.exists(self._human_dir):
+            os.makedirs(self._human_dir)
 
         if isinstance(split, str):
             self.split = [split]
@@ -42,12 +49,41 @@ class VOCSegmentation(Dataset):
         self.categories = []
 
         for splt in self.split:
-            with open(os.path.join(os.path.join(_splits_dir, splt + '.txt')), "r") as f:
+
+            if not os.path.isfile(os.path.join(_splits_dir, splt + '_multihumans.txt')):
+                with open(os.path.join(_splits_dir, splt + '.txt'), "r") as f:
+                    lines = f.read().splitlines()
+                goodlines = []
+                for ii, line in enumerate(lines):
+                    _cat = Image.open(os.path.join(self._cat_dir, line + ".png")).load()
+                    objimg = Image.open(os.path.join(self._obj_dir, line + ".png"))
+                    _obj = objimg.load()
+                    humans = {}
+
+                    for x in range(objimg.size[0]):
+                        for y in range(objimg.size[1]):
+                            obj = _obj[x,y]
+                            _obj[x,y] = 0 #255 if obj==255 else 0
+                            if _cat[x,y] == self.HUMAN_CLASS_ID and obj!=255 and obj!=0:
+                                if obj not in humans:
+                                    humans[obj] = len(humans)+1
+                                _obj[x,y] = 1 #humans[obj]
+                    
+                    if len(humans) >1:
+                        if os.path.isfile(os.path.join(self._human_dir, line + ".png")):
+                            os.remove(os.path.join(self._human_dir, line + ".png"))
+                        objimg.save(os.path.join(self._human_dir, line + ".png"))
+                        goodlines.append(line)
+
+                with open(os.path.join(_splits_dir, splt + '_multihumans.txt'), "w") as f:
+                    f.write('\n'.join(goodlines) + '\n')
+
+            with open(os.path.join(_splits_dir, splt + '_multihumans.txt'), "r") as f:
                 lines = f.read().splitlines()
 
             for ii, line in enumerate(lines):
                 _image = os.path.join(self._image_dir, line + ".jpg")
-                _cat = os.path.join(self._cat_dir, line + ".png")
+                _cat = os.path.join(self._human_dir, line + ".png")
                 assert os.path.isfile(_image)
                 assert os.path.isfile(_cat)
                 self.im_ids.append(line)

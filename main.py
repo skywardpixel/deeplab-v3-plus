@@ -55,7 +55,6 @@ class Trainer(object):
             weight = torch.from_numpy(weight.astype(np.float32))
         else:
             weight = None
-        self.criterion = SegmentationLosses(weight=weight, cuda=args.cuda).build_loss(mode=args.loss_type)
         self.model, self.optimizer = model, optimizer
 
         # Define Evaluator
@@ -64,10 +63,6 @@ class Trainer(object):
         self.scheduler = LRScheduler(args.lr_scheduler, args.lr,
                                      args.epochs, len(self.train_loader))
 
-        # Using cuda
-        if args.cuda:
-            self.model = torch.nn.DataParallel(self.model, device_ids=self.args.gpu_ids)
-            self.model = self.model.cuda()
 
         # Resuming checkpoint
         self.best_pred = 0.0
@@ -75,16 +70,30 @@ class Trainer(object):
             if not os.path.isfile(args.resume):
                 raise RuntimeError("=> no checkpoint found at '{}'".format(args.resume))
             checkpoint = torch.load(args.resume)
+
+            if checkpoint['state_dict']['decoder.last_conv.8.weight'].shape[0] != 21:
+                self.model.convert_to_project()
+
             args.start_epoch = checkpoint['epoch']
-            if args.cuda:
-                self.model.module.load_state_dict(checkpoint['state_dict'])
-            else:
-                self.model.load_state_dict(checkpoint['state_dict'])
-            if not args.ft:
-                self.optimizer.load_state_dict(checkpoint['optimizer'])
+            #if args.cuda:
+            #    self.model.module.load_state_dict(checkpoint['state_dict'])
+            #else:
+            self.model.load_state_dict(checkpoint['state_dict'])
+            #if not args.ft:
+            #    self.optimizer.load_state_dict(checkpoint['optimizer'])
             self.best_pred = checkpoint['best_pred']
             print("=> loaded checkpoint '{}' (epoch {})"
                   .format(args.resume, checkpoint['epoch']))
+
+        self.model.convert_to_project()
+
+        #moved it here cause of cuda junk
+        self.criterion = SegmentationLosses(weight=weight, cuda=args.cuda).build_loss(mode=args.loss_type)
+
+        # Using cuda
+        if args.cuda:
+            self.model = torch.nn.DataParallel(self.model, device_ids=self.args.gpu_ids)
+            self.model = self.model.cuda()
 
         # Clear start epoch if fine-tuning
         if args.ft:
