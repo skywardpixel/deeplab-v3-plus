@@ -143,6 +143,7 @@ class Trainer(object):
         self.evaluator.reset()
         tbar = tqdm(self.val_loader, desc='\r')
         test_loss = 0.0
+        num_img_val = len(self.train_loader)
         for i, sample in enumerate(tbar):
             image, target = sample['image'], sample['label']
             if self.args.cuda:
@@ -153,10 +154,14 @@ class Trainer(object):
             loss = compute_loss(output, target)
             test_loss += loss.item()
             pred = output.data.cpu().numpy()
-            target = target.cpu().numpy()
+            target2 = target.cpu().numpy()
             pred = np.argmax(pred, axis=1)
             # Add batch sample into evaluator
-            self.evaluator.add_batch(target, pred)
+            self.evaluator.add_batch(target2, pred)
+
+            if i % (num_img_val // 10) == 0:
+                global_step = i + num_img_val * epoch
+                #self.summary.visualize_image(self.writer, self.args.dataset, image, target, output, global_step)
 
         # Fast test during the training
         acc = self.evaluator.pixel_accuracy()
