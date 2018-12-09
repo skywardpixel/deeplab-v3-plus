@@ -6,8 +6,10 @@ from models import build_backbone
 from models.aspp import build_aspp
 from models.decoder import build_decoder
 
+from math import sqrt
+
 #DO NOT SET TO EXACTLY 20
-FEATUREVECTORSIZE = 32
+FEATUREVECTORSIZE = 15
 
 def compute_loss(output, target):
     is_human = target.clamp(0,1)
@@ -15,6 +17,42 @@ def compute_loss(output, target):
     loss = criterion(output[:,0], is_human)
 
     #add fv loss
+    for img in range(output.shape[0]):
+        fvs = output[img][1:]
+        these_spots = []
+        these_fvs = []
+        centroids = []
+        total_centroid = None
+        summ = 1
+
+        highest = torch.max(target[img]).item()
+        
+        for person in range(1,int(highest+1)):
+            spots = torch.eq(target[img], person).unsqueeze(0).float().data
+            summ = spots.sum()
+
+            if summ > 0:
+                this_fvs = spots * fvs
+                centroid = torch.sum(torch.sum(this_fvs.data, dim=1), dim=1)/summ
+                these_spots.append(spots)
+                these_fvs.append(this_fvs)
+                centroids.append(centroid)
+                if total_centroid is None:
+                    total_centroid = centroid
+                else:
+                    total_centroid = total_centroid + centroid
+
+        for c in range(len(centroids)):
+            centroid = centroids[c]
+            target_centroid = centroid
+            if len(centroids) > 1:
+                avg_other_centroids = (total_centroid-centroid)/(len(centroids)-1)
+                offset = (centroid - avg_other_centroids)
+                offset = offset * sqrt(FEATUREVECTORSIZE) / torch.norm(offset, 2)
+                target_centroid = avg_other_centroids + offset
+            spots = these_spots[c]
+            this_target_centroids = target_centroid.view(-1,1,1).repeat(1,spots.shape[1], spots.shape[2]) * spots
+            loss = loss + criterion(these_fvs[c], this_target_centroids)
 
     return loss
 
@@ -47,7 +85,8 @@ class DeepLab(nn.Module):
         x = self.decoder(x, low_level_feat)
         x = F.interpolate(x, size=input.size()[2:], mode='bilinear', align_corners=True)
         if self.is_project():
-            x[:,0] = F.sigmoid(x[:,0])
+            #x[:,0] = F.sigmoid(x[:,0])
+            x = F.sigmoid(x)
         return x
 
     def freeze_bn(self):

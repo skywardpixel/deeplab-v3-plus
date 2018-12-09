@@ -69,7 +69,7 @@ class VOCSegmentation(Dataset):
                                     humans[obj] = len(humans)+1
                                 _obj[x,y] = humans[obj]
                     
-                    if len(humans) >1:
+                    if len(humans) > 0: #only requires one person in the pic now
                         if os.path.isfile(os.path.join(self._human_dir, line + ".png")):
                             os.remove(os.path.join(self._human_dir, line + ".png"))
                         objimg.save(os.path.join(self._human_dir, line + ".png"))
@@ -115,14 +115,15 @@ class VOCSegmentation(Dataset):
         return _img, _target
 
     def transform_tr(self, sample):
-        composed_transforms = transforms.Compose([
-            tr.RandomHorizontalFlip(),
-            tr.RandomScaleCrop(base_size=self.args.base_size, crop_size=self.args.crop_size),
-            tr.RandomGaussianBlur(),
-            tr.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
-            tr.ToTensor()])
+        # composed_transforms = transforms.Compose([
+        #     tr.RandomHorizontalFlip(),
+        #     tr.RandomScaleCrop(base_size=self.args.base_size, crop_size=self.args.crop_size),
+        #     tr.RandomGaussianBlur(),
+        #     tr.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
+        #     tr.ToTensor()])
 
-        return composed_transforms(sample)
+        # return composed_transforms(sample)
+        return self.transform_val(sample)
 
     def transform_val(self, sample):
 

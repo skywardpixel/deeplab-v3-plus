@@ -27,8 +27,9 @@ class TensorboardSummary(object):
 
         writer.add_image('Is human', grid_image, global_step)
 
-        grid_image = make_grid(output[:3,1:4].detach().cpu(), 3, normalize=False, range=(0, 255))
-        writer.add_image('Feature Vector 1-3', grid_image, global_step)
+        for i in range(1,output.shape[1]-2,3):
+            grid_image = make_grid(output[:3,i:i+3].detach().cpu(), 3, normalize=False, range=(0, 255))
+            writer.add_image('Feature Vector '+str(i)+'-'+str(i+2), grid_image, global_step)
 
         grid_image = make_grid(decode_seg_map_sequence(torch.squeeze(target[:3], 1).detach().cpu().numpy(),
                                                        dataset=dataset), 3, normalize=False, range=(0, 255))
