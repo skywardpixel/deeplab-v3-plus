@@ -9,7 +9,7 @@ from models.decoder import build_decoder
 from math import sqrt
 
 #DO NOT SET TO EXACTLY 20
-FEATUREVECTORSIZE = 15
+FEATUREVECTORSIZE = 30
 
 def compute_loss(output, target):
     is_human = target.clamp(0,1)
@@ -44,15 +44,14 @@ def compute_loss(output, target):
 
         for c in range(len(centroids)):
             centroid = centroids[c]
-            target_centroid = centroid
             if len(centroids) > 1:
                 avg_other_centroids = (total_centroid-centroid)/(len(centroids)-1)
                 offset = (centroid - avg_other_centroids)
-                offset = offset * sqrt(FEATUREVECTORSIZE) / torch.norm(offset, 2)
-                target_centroid = avg_other_centroids + offset
+                offset = offset / torch.sum(offset*offset)
+                centroid = centroid + offset
             spots = these_spots[c]
-            this_target_centroids = target_centroid.view(-1,1,1).repeat(1,spots.shape[1], spots.shape[2]) * spots
-            loss = loss + criterion(these_fvs[c], this_target_centroids)
+            this_centroids = centroid.view(-1,1,1).repeat(1,spots.shape[1], spots.shape[2]) * spots
+            loss = loss + criterion(these_fvs[c], this_centroids)
 
     return loss
 
