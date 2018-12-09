@@ -10,7 +10,6 @@ from torchvision import transforms
 from dataloaders import transforms as tr
 from dataloaders.utils import dataset_root_dir
 
-
 class VOCSegmentation(Dataset):
     """
     PascalVoc dataset
