@@ -48,7 +48,7 @@ def compute_loss(output, target):
                 avg_other_centroids = (total_centroid-centroid)/(len(centroids)-1)
                 offset = (centroid - avg_other_centroids)
                 offset = offset / torch.sum(offset*offset)
-                centroid = centroid + offset
+                centroid = centroid + offset #could multiply offset to balance between pushing away different fvs/grouping same fvs
             spots = these_spots[c]
             this_centroids = centroid.view(-1,1,1).repeat(1,spots.shape[1], spots.shape[2]) * spots
             loss = loss + criterion(these_fvs[c], this_centroids)
