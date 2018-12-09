@@ -6,10 +6,84 @@ from models import build_backbone
 from models.aspp import build_aspp
 from models.decoder import build_decoder
 
-from math import sqrt
+import math
+
+import scipy.cluster.vq as vq
+import numpy as np
+
 
 #DO NOT SET TO EXACTLY 20
 FEATUREVECTORSIZE = 30
+
+kernel_stick_out = 6
+def make_gaussian():
+    kernel_size = 2*kernel_stick_out + 1
+    sigma = kernel_stick_out/3.0
+
+    x_coord = torch.arange(kernel_size)
+    x_grid = x_coord.repeat(kernel_size).view(kernel_size, kernel_size)
+    y_grid = x_grid.t()
+    xy_grid = torch.stack([x_grid, y_grid], dim=-1).float()
+
+    mean = (kernel_size - 1)/2.
+    variance = sigma**2.
+    gaussian_kernel = (1./(2.*math.pi*variance)) *\
+                      torch.exp(
+                          -torch.sum((xy_grid - mean)**2., dim=-1) /\
+                          (2*variance)
+                      )
+    gaussian_kernel = gaussian_kernel / torch.sum(gaussian_kernel)
+    gaussian_kernel = gaussian_kernel.view(1, 1, 1, kernel_size, kernel_size)
+    # gaussian_kernel = gaussian_kernel.repeat(1, 1, 1, 1)
+    gaussian_filter = nn.Conv3d(in_channels=1, out_channels=1,
+                                kernel_size=(1,kernel_size,kernel_size))
+    gaussian_filter.weight.data = gaussian_kernel
+    gaussian_filter.weight.requires_grad = False
+    return gaussian_filter
+
+#target is only for KNN K
+def choose_objects(output, target):
+    output = output.data
+    
+    #is_human to a power
+    importance = torch.pow(output[:,0:1],5.0)
+    wfvs = importance*output[:,1:]
+
+    gaussian = make_gaussian()
+    gaussian = gaussian.cuda()
+    wfvsg = gaussian(F.pad(wfvs,(kernel_stick_out,kernel_stick_out,kernel_stick_out,kernel_stick_out),mode='reflect').unsqueeze(1))
+    importanceg = gaussian(F.pad(importance,(kernel_stick_out,kernel_stick_out,kernel_stick_out,kernel_stick_out),mode='reflect').unsqueeze(1))
+    nfvsg = wfvsg/importanceg
+
+    nfvsg = nfvsg.squeeze(1).data
+
+    chosen = torch.zeros(output.shape[0], output.shape[2], output.shape[3], dtype=output.dtype)
+    for img in range(output.shape[0]):
+        true_k = 0
+        highest = torch.max(target[img]).item()
+        for person in range(1,int(highest+1)):
+            if torch.sum(torch.eq(target[img], person)) > 500: #need at least X pixels
+                true_k = true_k + 1
+        if true_k == 0:
+            continue
+        fvs = []
+        for x in range(output.shape[2]):
+            for y in range(output.shape[3]):
+                if output[img,0,x,y]>0.5:
+                    fvs.append(nfvsg[img,:,x,y])
+        if len(fvs) < true_k:
+            continue
+
+        fvs = torch.stack(fvs).cpu().numpy()
+        centroids, labels = vq.kmeans2(fvs, fvs[np.random.choice(fvs.shape[0],true_k, False)])
+        labelidx = 0
+        for x in range(output.shape[2]):
+            for y in range(output.shape[3]):
+                if output[img,0,x,y]>0.5:
+                    chosen[img,x,y] = labels[labelidx].item()+1
+                    labelidx = labelidx+1
+    return chosen
+    
 
 def compute_loss(output, target):
     is_human = target.clamp(0,1)

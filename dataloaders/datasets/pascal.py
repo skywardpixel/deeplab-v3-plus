@@ -69,7 +69,7 @@ class VOCSegmentation(Dataset):
                                     humans[obj] = len(humans)+1
                                 _obj[x,y] = humans[obj]
                     
-                    if len(humans) > 0: #only requires one person in the pic now
+                    if len(humans) > 1: #only requires one person in the pic now
                         if os.path.isfile(os.path.join(self._human_dir, line + ".png")):
                             os.remove(os.path.join(self._human_dir, line + ".png"))
                         objimg.save(os.path.join(self._human_dir, line + ".png"))

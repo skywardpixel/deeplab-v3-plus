@@ -105,6 +105,9 @@ class Trainer(object):
         tbar = tqdm(self.train_loader)
         num_img_tr = len(self.train_loader)
         for i, sample in enumerate(tbar):
+            if sample['image'].shape[0]==1:
+                print("don't use size-1 batches")
+                continue
             image, target = sample['image'], sample['label']
             if self.args.cuda:
                 image, target = image.cuda(), target.cuda()
@@ -145,6 +148,9 @@ class Trainer(object):
         test_loss = 0.0
         num_img_val = len(self.train_loader)
         for i, sample in enumerate(tbar):
+            if sample['image'].shape[0]==1:
+                print("don't use size-1 batches")
+                continue
             image, target = sample['image'], sample['label']
             if self.args.cuda:
                 image, target = image.cuda(), target.cuda()
