@@ -96,7 +96,6 @@ def compute_loss(output, target):
         these_spots = []
         these_fvs = []
         centroids = []
-        total_centroid = None
         summ = 1
 
         highest = torch.max(target[img]).item()
@@ -111,23 +110,16 @@ def compute_loss(output, target):
                 these_spots.append(spots)
                 these_fvs.append(this_fvs)
                 centroids.append(centroid)
-                if total_centroid is None:
-                    total_centroid = centroid
-                else:
-                    total_centroid = total_centroid + centroid
 
         for c in range(len(centroids)):
             centroid = centroids[c]
             spots = these_spots[c]
-            if len(centroids) > 1:
-                avg_other_centroids = (total_centroid-centroid)/(len(centroids)-1)
-                offset = (centroid - avg_other_centroids)
-                offset = offset / torch.sum(offset*offset)
-                centroid = centroid + offset #could multiply offset to balance between pulling together within groups and pushing apart different groups
+            for d in range(len(centroids)):
+                if c!=d:
+                    offset = centroids[c] - centroids[d]
+                    offset = offset / torch.sum(offset*offset)
+                    centroid = centroid + offset #could multiply offset to balance between pulling together within groups and pushing apart different groups
 
-                #this doesnt work as well
-                #this_fvs_offset = these_fvs[c] - avg_other_centroids.view(-1,1,1).repeat(1,spots.shape[1], spots.shape[2]) * spots
-                #loss = loss + 1.0/torch.sum(this_fvs_offset*this_fvs_offset)
             this_centroids = centroid.view(-1,1,1).repeat(1,spots.shape[1], spots.shape[2]) * spots
             loss = loss + criterion(these_fvs[c], this_centroids)
 
